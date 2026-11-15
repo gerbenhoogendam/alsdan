@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Als-Dan</title>
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+<style>
+:root { --bg: #f3f5fb; --card: #fff; --ink: #1d2433; --muted: #6b7385; --als: #ffb300; --dan: #3d7bff; --ok: #22c55e; --bad: #ef4444; --radius: 16px; }
+* { box-sizing: border-box; }
+/* Alles op één scherm: de pagina zelf schuift niet, alleen de lijst met onderdelen en de lijst met regels als die lang worden. */
+html, body { height: 100%; }
+body { margin: 0; display: flex; flex-direction: column; overflow: hidden; font-family: ui-rounded, -apple-system, "SF Pro Rounded", system-ui, sans-serif; font-size: 16px; color: var(--ink); background: var(--bg); }
+header { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: #fff; box-shadow: 0 1px 0 #e3e7f0; flex-wrap: wrap; }
+.logo { font-weight: 900; font-size: 22px; letter-spacing: 1px; display: flex; gap: 8px; align-items: center; }
+.logo .als { background: var(--als); color: #3a2a00; padding: 2px 10px; border-radius: 10px; }
+.logo .dan { background: var(--dan); color: #fff; padding: 2px 10px; border-radius: 10px; }
+.spacer { flex: 1; }
+.conn { padding: 6px 12px; border-radius: 999px; background: #eef0f6; color: var(--muted); font-size: 14px; }
+.conn.on { background: #dcfce7; color: #166534; }
+button { font: inherit; font-weight: 700; border: 0; border-radius: 12px; padding: 8px 14px; background: #e9edf7; color: var(--ink); cursor: pointer; }
+button:hover { filter: brightness(.96); }
+button.primary { background: var(--ok); color: #fff; }
+button.ghost { background: transparent; color: var(--muted); }
+button.big { flex: none; width: 100%; margin-top: 8px; padding: 10px; font-size: 17px; background: #fff; border: 2px dashed #c9d1e3; color: var(--muted); }
+button.x { background: transparent; color: #aab; padding: 4px 8px; font-size: 18px; line-height: 1; }
+button.x:hover { color: var(--bad); }
+button.help { border: 2px solid #c9d1e3; border-radius: 50%; width: 26px; height: 26px; padding: 0; font-size: 15px; color: var(--muted); }
+button.test { padding: 6px 10px; font-size: 14px; background: #eef2ff; }
+button.add { align-self: flex-start; background: #eef2ff; color: var(--dan); padding: 6px 12px; }
+select, input { font: inherit; border: 2px solid #dde3f0; border-radius: 10px; padding: 6px 8px; background: #fff; color: inherit; max-width: 100%; }
+input[type=number] { width: 84px; }
+input[type=color] { width: 46px; height: 38px; padding: 2px; }
+.small { color: var(--muted); font-size: 14px; }
+
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: 260px minmax(460px, 1.5fr) minmax(380px, 1fr); gap: 14px; padding: 12px 14px 14px; }
+.col { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.colhead { flex: none; display: flex; align-items: center; gap: 8px; min-height: 40px; margin-bottom: 8px; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; }
+h2 { margin: 0; font-size: 19px; display: flex; align-items: center; gap: 8px; }
+h2 .n { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 15px; }
+p { margin: 6px 0; }
+
+/* 1 onderdelen */
+.dev { display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 14px; padding: 6px 4px 6px 6px; margin-bottom: 8px; border: 2px solid transparent; cursor: pointer; }
+.dev.sel { border-color: var(--c); box-shadow: 0 2px 8px rgba(20, 30, 60, .1); }
+.thumb { flex: none; width: 46px; height: 46px; border-radius: 10px; background: #eef0f6; }
+.dev .who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dev .name { width: 100%; font-weight: 700; border-color: transparent; padding: 2px 6px; background: transparent; }
+.dev .name:hover, .dev .name:focus { border-color: #dde3f0; background: #fff; }
+.dev .small { padding-left: 8px; }
+.live { color: var(--c, var(--ink)); }
+
+/* 2 aansluiten */
+.panel { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--card); border-radius: var(--radius); padding: 10px 14px; }
+#boardSvg { flex: 1; min-height: 150px; }
+#boardSvg svg { display: block; width: 100%; height: 100%; }
+#boardSvg .w { transition: opacity .15s; }
+#boardSvg .w.dim { opacity: .15; }
+#wiring { flex: none; }
+.wrow { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 10px; flex-wrap: wrap; }
+.wrow[data-wire]:hover { background: #f3f5fb; }
+.wrow select { padding: 3px 6px; }
+.wrow .to { background: #1f2a44; color: #fff; padding: 3px 10px; border-radius: 8px; }
+.wrow select.pin { background: #1f2a44; color: #fff; border-color: #1f2a44; font-weight: 700; }
+.sw { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, .3); }
+.note { color: var(--muted); font-size: 14px; line-height: 1.35; }
+.share { font-size: 14px; background: #fff8e1; border-radius: 10px; padding: 6px 10px; }
+.needs { color: #b45309; font-weight: 700; }
+
+/* 3 regels */
+.rule { position: relative; background: var(--card); border-radius: var(--radius); padding: 12px 40px 12px 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(20, 30, 60, .06); border: 2px solid transparent; }
+.rule.fired { animation: fired .7s ease-out; }
+@keyframes fired { 0% { box-shadow: 0 0 0 8px #fde68a; } 100% { box-shadow: 0 2px 8px rgba(20, 30, 60, .06); } }
+.rule.skipped { border-color: #fecaca; }
+.row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.row + .row { margin-top: 8px; }
+.tag { font-weight: 900; padding: 6px 10px; border-radius: 10px; min-width: 56px; text-align: center; }
+.als .tag { background: var(--als); color: #3a2a00; }
+.dan .tag { background: var(--dan); color: #fff; }
+.steps { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.step { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.row > select, .step > select { flex: 1 1 150px; min-width: 0; }   /* in een smalle kolom krimpt de keuzelijst in plaats van naar de volgende regel te springen */
+.param { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.rule .del { position: absolute; top: 8px; right: 4px; }
+.warn { margin-top: 8px; color: #b91c1c; font-size: 14px; }
+.empty { color: var(--muted); }
+.program { margin-top: 10px; color: var(--muted); font-size: 14px; }
+.program pre { background: #1f2a44; color: #d7e0ff; padding: 12px; border-radius: 12px; overflow: auto; }
+
+/* venstertjes en meldingen */
+.modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(20, 28, 48, .45); }
+.modal[hidden] { display: none; }
+.modal > div { position: relative; max-width: 640px; max-height: 100%; overflow: auto; background: #fff; border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, .3); }
+.modal .close { position: absolute; top: 10px; right: 8px; }
+.modal ol { padding-left: 22px; line-height: 1.5; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 18px; border-radius: 12px; color: #fff; font-weight: 700; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); z-index: 30; max-width: 90vw; }
+.toast.good { background: #16a34a; }
+.toast.bad { background: #dc2626; }
+
+/* shortcut: op een smal of laag venster past het niet op één scherm en schuift de pagina gewoon; maak het venster groter voor alles in beeld */
+@media (max-width: 1120px), (max-height: 600px) {
+  html, body { height: auto; }
+  body { overflow: auto; }
+  main { display: flex; flex-direction: column; }
+  .scroll { overflow: visible; }
+  #boardSvg { flex: none; height: 440px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="als">ALS</span><span>→</span><span class="dan">DAN</span></div>
+  <div class="spacer"></div>
+  <span id="conn" class="conn">Niet verbonden</span>
+  <button id="btnConnect">Verbind</button>
+  <button id="btnSend" class="primary">Stuur naar ESP32</button>
+  <button id="btnSetup" class="ghost">Eerste keer</button>
+</header>
+
+<main>
+  <section class="col">
+    <div class="colhead"><h2><span class="n">1</span> Onderdelen</h2></div>
+    <select id="addKind" aria-label="Onderdeel erbij" style="margin-bottom: 8px"><option value="">+ Onderdeel erbij…</option></select>
+    <div id="devices" class="scroll"></div>
+  </section>
+  <section class="col">
+    <div class="panel">
+      <div id="whead" class="colhead"></div>
+      <div id="boardSvg"></div>
+      <div id="wiring"></div>
+    </div>
+  </section>
+  <section class="col">
+    <div class="colhead">
+      <h2><span class="n">3</span> Regels</h2><span class="spacer"></span>
+      <select id="examples" aria-label="Voorbeeld laden"><option value="">Voorbeeld laden…</option></select>
+    </div>
+    <div class="scroll">
+      <div id="rules"></div>
+      <details class="program"><summary>Wat stuurt de computer naar de ESP32?</summary><pre id="program"></pre></details>
+    </div>
+    <button id="btnAddRule" class="big">+ Nieuwe regel</button>
+  </section>
+</main>
+
+<div id="setup" class="modal" hidden><div>
+  <button class="x close" data-close title="Sluiten">×</button>
+  <h2>Eerste keer: de ESP32 klaarmaken</h2>
+  <ol>
+    <li>Steek de ESP32 met een USB-kabel in de Mac (een kabel die ook data doet, niet alleen oplaadt).</li>
+    <li>Klik op <b>Zet de firmware op de ESP32</b>, kies de poort (meestal <i>cu.usbserial…</i> of <i>SLAB_USBtoUART</i>) en wacht tot het klaar is. Lukt het verbinden niet? Houd het knopje <b>BOOT</b> op de ESP32 ingedrukt terwijl je op Verbinden klikt.</li>
+    <li>Klik daarna bovenaan op <b>Verbind</b> en kies dezelfde poort. Vanaf nu hoef je alleen nog stap 3 te doen.</li>
+  </ol>
+  <esp-web-install-button manifest="firmware/manifest.json">
+    <button slot="activate" class="primary">Zet de firmware op de ESP32</button>
+    <span slot="unsupported">Dit werkt alleen in Chrome of Edge.</span>
+    <span slot="not-allowed">Open de app via start.command (http://localhost:8321), niet als los bestand.</span>
+  </esp-web-install-button>
+  <p class="small">De firmware is een klein programma dat op de ESP32 jouw regels leest en uitvoert. Hij onthoudt ze ook als de computer eraf gaat.</p>
+</div></div>
+
+<div id="help" class="modal" hidden><div>
+  <button class="x close" data-close title="Sluiten">×</button>
+  <h2>Plus, min en een seintje</h2>
+  <p>Stroom loopt altijd een rondje: van <b>plus</b>, door het onderdeel, terug naar <b>min</b>.</p>
+  <p><b>Plus</b>: hier komt de stroom vandaan. Op het bordje is dat <b>3V3</b> of <b>VIN</b>. Op onderdelen staat er VCC, VIN, 5V of +.</p>
+  <p><b>Min</b>: hier gaat de stroom weer terug. Dat heet bijna overal <b>GND</b>.</p>
+  <p><b>Seintje</b>: over dit draadje praten de ESP32 en het onderdeel. Op het bordje zijn dat de pinnen met een <b>D</b> (en RX2 en TX2).</p>
+  <p>De kleur van een draadje maakt voor de stroom niets uit. Kies in de lijst de kleur die jij echt gebruikt, dan klopt het plaatje.</p>
+</div></div>
+
+<div id="toast" class="toast" hidden></div>
+<!-- ?v=3 (ook bij logic.js en parts.js in app.js): een browser die de scripts nog bewaard had van voor serve.py "no-store" stuurde, haalt ze zo opnieuw -->
+<script type="module" src="app.js?v=3"></script>
+</body>
+</html>
